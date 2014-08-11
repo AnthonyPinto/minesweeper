@@ -1,3 +1,5 @@
+# encoding: UTF-8
+
 class Cell
   
   attr_accessor :indices
@@ -11,27 +13,35 @@ class Cell
   end
   
   def click
-    return false if self.bomb?
+    if self.bomb?
+      @visible = true
+      return false 
+    end
     return true if self.flagged?
     @visible = true
     if number == 0
       @neighbors.each do |node|
-        node.click
+        node.click unless node.visible?
       end
     end
     true
   end
   
   def to_s
+    return "F" if @flagged 
     return '*' unless @visible
-    return 'B' if bomb?
+    return '!' if bomb?
     num = number
     return num.to_s if num > 0
     return "_"
   end
   
   def flag
-    @flagged = true
+    if @flagged
+      @flagged = false
+    else
+      @flagged = true
+    end
   end
   
   def flagged?
@@ -52,7 +62,7 @@ class Cell
     count
   end
   
-  def add_neighbor( node )
+  def add_neighbor(node)
     @neighbors << node
   end
   
@@ -68,15 +78,15 @@ end
 
 class Map 
   DELTAS = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1,-1], [1, 0], [1, 1]]
-  @nodes
   
+  attr_reader :matrix_side_length
   
   def initialize(matrix_side_length, number_of_bombs)
     @matrix_side_length = matrix_side_length
     @number_of_bombs = number_of_bombs
     @nodes = []
     generate_nodes
-    puts @nodes
+    link_nodes
   end
   
   def display
@@ -92,6 +102,14 @@ class Map
     puts
   end
   
+  def win?
+    @nodes.each do |node|
+      return false if node.bomb? && !node.flagged?
+      return false if !node.bomb? && !node.visible?
+    end
+    true
+  end
+  
   def line
     "-" * ((2 * @matrix_side_length) + 1)
   end
@@ -103,8 +121,6 @@ class Map
         indices << [i,j]
       end
     end
-    
-    p indices
     
     indices.each do |i|
       @nodes << Cell.new(i)
@@ -127,10 +143,10 @@ class Map
     nil
   end
   
-  def link_up
+  def link_nodes
     @nodes.each do |node|
       neighboring_indices(node.indices).each do |indices|
-        node.add_neighbor(neighboring_indices(self[indices]))
+        node.add_neighbor(self[indices])
       end
     end
   end
@@ -151,27 +167,75 @@ end
 
 class Game
   
+  BITS = %w(HEAD ARM BUTT LEGS FACE PET-TURTLE)
+  attr_reader :map
+  
   def initialize(matrix_side_length, number_of_bombs)
     @map = Map.new(matrix_side_length, number_of_bombs)
   end
   
-  
+  def play
+    begin
+      display
+      move(*get_input)
+    end until win?
+    display
+    win_message
+  end
   
   def display
+    @map.display
+  end
+  
+  def win_message
+    puts "YOU HAVE WON!!!"
+    puts "YOU DID NOT LOSE YOUR #{BITS.sample}!!!"
+    puts "I LIKE YOU!!!!"
+  end
+  
+  def move(y, x, flagging = false)
+    if flagging
+      @map[[x.to_i, y.to_i]].flag
+    else
+      @map[[x.to_i, y.to_i]].click
+      lose if @map[[x.to_i, y.to_i]].bomb?
+    end
+  end
+  
+  def get_input
+    valid = false
+    until valid
+      prompt
+      choice = gets.split
+      valid = check_valid(choice)
+    end
+    choice
+  end
+  
+  def check_valid (choice)
+    return false unless choice.length.between?(2,3)
+    return false unless choice[0].to_i.between?(0, @map.matrix_side_length - 1)
+    return false unless choice[1].to_i.between?(0, @map.matrix_side_length - 1)
+    
+    choice[2].downcase == "f" if choice[2]
+    true
+  end
+  
+  def prompt
+    puts "enter x and y index seperated by a space. (0 0)"
+    puts "follow indices with 'f' if you want to flag (0 0 f)"
   end
   
   def win?
+    @map.win?
   end
   
-  def lose?
+  def lose
+    display
+    puts "BOOOOM!"
+    puts "YOU HAVE LOST YOUR #{BITS.sample}!!!"
+    exit 
   end
-  
-  def click
-    
-  end
-    
-  
-  
   
 end
 
@@ -215,3 +279,4 @@ end
 #
 # end
 g = Game.new(9, 11)
+g.play
