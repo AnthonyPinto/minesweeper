@@ -5,11 +5,51 @@ class Cell
   def initialize indices, bomb = false, clicked = false
     @indices = indices
     @bomb = false
-    @clicked = false
+    @visible = false
+    @neighbors = []
+    @flagged = false
+  end
+  
+  def click
+    return false if self.bomb?
+    return true if self.flagged?
+    @visible = true
+    if number == 0
+      @neighbors.each do |node|
+        node.click
+      end
+    end
+    true
+  end
+  
+  def to_s
+    return '*' unless @visible
+    return 'B' if bomb?
+    num = number
+    return num.to_s if num > 0
+    return "_"
+  end
+  
+  def flag
+    @flagged = true
+  end
+  
+  def flagged?
+    @flagged
   end
   
   def set_bomb
     @bomb = true
+  end
+  
+  def number
+    count = 0
+    
+    @neighbors.each do |node|
+      count += 1 if node.bomb?
+    end
+    
+    count
   end
   
   def add_neighbor( node )
@@ -20,8 +60,8 @@ class Cell
     @bomb
   end
   
-  def clicked?
-    @clicked
+  def visible?
+    @visible
   end
   
 end
@@ -31,13 +71,30 @@ class Map
   @nodes
   
   
-  def initialize
-    @matrix_side_length = 9
-    @number_of_bombs = 11
+  def initialize(matrix_side_length, number_of_bombs)
+    @matrix_side_length = matrix_side_length
+    @number_of_bombs = number_of_bombs
     @nodes = []
     generate_nodes
+    puts @nodes
   end
   
+  def display
+    display_matrix = Array.new(@matrix_side_length) {[]}
+    puts
+    @matrix_side_length.times do |x|
+      print "|"
+      @matrix_side_length.times do |y|
+        print "#{self[[x, y]]}|"
+      end
+      puts
+    end
+    puts
+  end
+  
+  def line
+    "-" * ((2 * @matrix_side_length) + 1)
+  end
   
   def generate_nodes
     indices = []
@@ -61,6 +118,7 @@ class Map
     bomb_indices = indices.sample(@number_of_bombs)
     bomb_indices.each { |i| self[i].set_bomb }
   end
+  
   
   def [] indices
     @nodes.each do |node|
@@ -92,6 +150,28 @@ end
 
 
 class Game
+  
+  def initialize(matrix_side_length, number_of_bombs)
+    @map = Map.new(matrix_side_length, number_of_bombs)
+  end
+  
+  
+  
+  def display
+  end
+  
+  def win?
+  end
+  
+  def lose?
+  end
+  
+  def click
+    
+  end
+    
+  
+  
   
 end
 
@@ -134,5 +214,4 @@ end
 #   end
 #
 # end
-m = Map.new
-p m[[1, 1]].clicked?
+g = Game.new(9, 11)
