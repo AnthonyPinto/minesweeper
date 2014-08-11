@@ -4,7 +4,8 @@ class Cell
   
   attr_accessor :indices
   
-  def initialize indices, bomb = false, clicked = false
+  # refactor CRUFT
+  def initialize indices, bomb = false
     @indices = indices
     @bomb = false
     @visible = false
@@ -12,7 +13,7 @@ class Cell
     @flagged = false
   end
   
-  def click
+  def click # try renaming
     if self.bomb?
       @visible = true
       return false 
@@ -28,15 +29,24 @@ class Cell
   end
   
   def to_s
-    return "F" if @flagged 
-    return '*' unless @visible
-    return '!' if bomb?
+    return "🏁" if @flagged 
+    return "◼️" unless @visible
+    return "💣" if bomb?
     num = number
-    return num.to_s if num > 0
-    return "_"
+    
+    return "8️⃣" if num == 8
+    return "7️⃣" if num == 7
+    return "6️⃣" if num == 6
+    return "5️⃣" if num == 5
+    return "4️⃣" if num == 4
+    return "3️⃣" if num == 3
+    return "2️⃣" if num == 2
+    return "1️⃣" if num == 1
+    return "0️⃣" if num == 0
   end
   
   def flag
+    # @flagged = !@flagged
     if @flagged
       @flagged = false
     else
@@ -91,11 +101,16 @@ class Map
   
   def display
     display_matrix = Array.new(@matrix_side_length) {[]}
-    puts
+    print ' '
+    @matrix_side_length.times do |i|
+      print "  #{i}"
+    end
+    puts 
+    
     @matrix_side_length.times do |x|
-      print "|"
+      print x
       @matrix_side_length.times do |y|
-        print "#{self[[x, y]]}|"
+        print "  #{self[[x, y]]}"
       end
       puts
     end
@@ -109,11 +124,11 @@ class Map
     end
     true
   end
-  
-  def line
-    "-" * ((2 * @matrix_side_length) + 1)
-  end
-  
+  #
+  # def line
+  #   "-" * ((2 * @matrix_side_length) + 1)
+  # end
+  #
   def generate_nodes
     indices = []
     @matrix_side_length.times do |i|
@@ -129,12 +144,10 @@ class Map
     add_bombs(indices)
   end
     
-    
   def add_bombs indices  
     bomb_indices = indices.sample(@number_of_bombs)
     bomb_indices.each { |i| self[i].set_bomb }
   end
-  
   
   def [] indices
     @nodes.each do |node|
@@ -151,8 +164,6 @@ class Map
     end
   end
   
-    
-  
   def neighboring_indices(indices)
     possible_indices = DELTAS.map { |x, y| [indices.first + x, indices.last + y] }
     possible_indices.select do |x, y| 
@@ -162,11 +173,7 @@ class Map
   end
 end
 
-
-
-
 class Game
-  
   BITS = %w(HEAD ARM BUTT LEGS FACE PET-TURTLE)
   attr_reader :map
   
@@ -212,7 +219,8 @@ class Game
     choice
   end
   
-  def check_valid (choice)
+  # refactor with Error stuff.
+  def check_valid(choice)
     return false unless choice.length.between?(2,3)
     return false unless choice[0].to_i.between?(0, @map.matrix_side_length - 1)
     return false unless choice[1].to_i.between?(0, @map.matrix_side_length - 1)
@@ -226,6 +234,7 @@ class Game
     puts "follow indices with 'f' if you want to flag (0 0 f)"
   end
   
+  # forwardable
   def win?
     @map.win?
   end
